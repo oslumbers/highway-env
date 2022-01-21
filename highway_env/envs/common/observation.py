@@ -174,7 +174,8 @@ class KinematicObservation(ObservationType):
         self.observe_intentions = observe_intentions
 
     def space(self) -> spaces.Space:
-        return spaces.Box(shape=(self.vehicles_count, len(self.features)), low=-np.inf, high=np.inf, dtype=np.float32)
+        shape = self.vehicles_count * len(self.features)
+        return spaces.Box(shape=(shape, ), low=-np.inf, high=np.inf, dtype=np.float32)
 
     def normalize_obs(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -226,6 +227,7 @@ class KinematicObservation(ObservationType):
         # Reorder
         df = df[self.features]
         obs = df.values.copy()
+        obs = obs.flatten()
         if self.order == "shuffled":
             self.env.np_random.shuffle(obs[1:])
         # Flatten

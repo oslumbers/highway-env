@@ -236,10 +236,17 @@ class MultiAgentAction(ActionType):
         super().__init__(env)
         self.action_config = action_config
         self.agents_action_types = []
-        for vehicle in range(env.num_players):
-            action_type = action_factory(self.env, self.action_config)
-            action_type.controlled_vehicle = vehicle
-            self.agents_action_types.append(action_type)
+        if len(self.env.controlled_vehicles) == 0:
+            for vehicle in range(self.env.num_players):
+                action_type = action_factory(self.env, self.action_config)
+                action_type.controlled_vehicle = vehicle
+                self.agents_action_types.append(action_type)
+
+        else:
+            for vehicle in self.env.controlled_vehicles:
+                action_type = action_factory(self.env, self.action_config)
+                action_type.controlled_vehicle = vehicle
+                self.agents_action_types.append(action_type)
 
     def space(self) -> spaces.Space:
         return spaces.Tuple([action_type.space() for action_type in self.agents_action_types])

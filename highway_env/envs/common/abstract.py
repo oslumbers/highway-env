@@ -133,7 +133,7 @@ class AbstractEnv(gym.Env):
             self.observation_space = gym.spaces.Tuple(tuple([self.observation_type.space()[0]] * self.num_players))
             #gym.spaces.Tuple(tuple([self._get_observation_space()] * len(self.players)))
         else:
-            self.observation_space = gym.spaces.Tuple(tuple([self.observation_type.space()] * self.num_players))
+            self.observation_space = gym.spaces.Tuple(tuple([self.observation_type.space()[0]] * self.num_players))
         self.share_observation_space = gym.spaces.Tuple(tuple([self.observation_type.space()] * self.num_players))
         self.action_space = gym.spaces.Tuple(tuple([self.action_type.space()] * self.num_players))
 
@@ -246,7 +246,6 @@ class AbstractEnv(gym.Env):
             if action is not None \
                     and not self.config["manual_control"] \
                     and self.time % int(self.config["simulation_frequency"] // self.config["policy_frequency"]) == 0:
-                print(action)
                 self.action_type.act(action)
 
             self.road.act()
