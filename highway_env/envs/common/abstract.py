@@ -48,13 +48,14 @@ class AbstractEnv(gym.Env):
         # Scene
         self.road = None
         self.controlled_vehicles = []
+        self.num_players = self.config['controlled_vehicles']
 
         # Spaces
-        self.action_type = None
-        self.action_space = None
-        self.observation_type = None
-        self.observation_space = None
-        self.define_spaces()
+        self.action_type = action_factory(self, {'type': 'MultiAgentAction', 'action_config': {'type': 'DiscreteMetaAction'}})
+        self.action_space = gym.spaces.Tuple(tuple([self.action_type.space()[0]] * self.num_players))
+        self.observation_type = observation_factory(self, {'type': 'MultiAgentObservation', 'observation_config': {'type': 'Kinematics'}})
+        self.observation_space = gym.spaces.Tuple(tuple([self.observation_type.space()[0]] * self.num_players))
+        self.share_observation_space = gym.spaces.Tuple(tuple([self._get_shared_obs_space()] * self.num_players))
 
         # Running
         self.time = 0  # Simulation time
@@ -67,7 +68,8 @@ class AbstractEnv(gym.Env):
         self.rendering_mode = 'human'
         self.enable_auto_render = False
 
-        self.reset()
+        self._reset()
+        #self.define_spaces()
 
     @property
     def vehicle(self) -> Vehicle:
@@ -127,8 +129,23 @@ class AbstractEnv(gym.Env):
         """
         self.observation_type = observation_factory(self, self.config["observation"])
         self.action_type = action_factory(self, self.config["action"])
-        self.observation_space = self.observation_type.space()
-        self.action_space = self.action_type.space()
+        if len(self.observation_type.space()) > 0:
+            self.observation_space = gym.spaces.Tuple(tuple([self.observation_type.space()[0]] * self.num_players))
+            #gym.spaces.Tuple(tuple([self._get_observation_space()] * len(self.players)))
+        else:
+            self.observation_space = gym.spaces.Tuple(tuple([self.observation_type.space()] * self.num_players))
+        self.share_observation_space = gym.spaces.Tuple(tuple([self.observation_type.space()] * self.num_players))
+        self.action_space = gym.spaces.Tuple(tuple([self.action_type.space()] * self.num_players))
+
+    def _get_shared_obs_space(self):
+        self.shared_obs_type = self.observation_type
+        shared_obs_space_min = self.shared_obs_type.space()[0].low
+        shared_obs_space_high = self.shared_obs_type.space()[0].high
+        for obs_space in self.shared_obs_type.space()[1:]:
+            shared_obs_space_min = np.append(shared_obs_space_min, obs_space.low)
+            shared_obs_space_high = np.append(shared_obs_space_high, obs_space.high)
+        
+        return gym.spaces.Box(shared_obs_space_min, shared_obs_space_high, dtype=np.float32)
 
     def _reward(self, action: Action) -> float:
         """
@@ -229,6 +246,7 @@ class AbstractEnv(gym.Env):
             if action is not None \
                     and not self.config["manual_control"] \
                     and self.time % int(self.config["simulation_frequency"] // self.config["policy_frequency"]) == 0:
+                print(action)
                 self.action_type.act(action)
 
             self.road.act()

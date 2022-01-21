@@ -475,8 +475,8 @@ class MultiAgentObservation(ObservationType):
         super().__init__(env)
         self.observation_config = observation_config
         self.agents_observation_types = []
-        for vehicle in self.env.controlled_vehicles:
-            obs_type = observation_factory(self.env, self.observation_config)
+        for vehicle in range(env.num_players):
+            obs_type = observation_factory(self.env, {'type': 'Kinematics'})
             obs_type.observer_vehicle = vehicle
             self.agents_observation_types.append(obs_type)
 
@@ -484,6 +484,8 @@ class MultiAgentObservation(ObservationType):
         return spaces.Tuple([obs_type.space() for obs_type in self.agents_observation_types])
 
     def observe(self) -> tuple:
+        for i, vehicle in enumerate(self.env.controlled_vehicles):
+            self.agents_observation_types[i].observer_vehicle = vehicle
         return tuple(obs_type.observe() for obs_type in self.agents_observation_types)
 
 

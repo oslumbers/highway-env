@@ -236,7 +236,7 @@ class MultiAgentAction(ActionType):
         super().__init__(env)
         self.action_config = action_config
         self.agents_action_types = []
-        for vehicle in self.env.controlled_vehicles:
+        for vehicle in range(env.num_players):
             action_type = action_factory(self.env, self.action_config)
             action_type.controlled_vehicle = vehicle
             self.agents_action_types.append(action_type)
